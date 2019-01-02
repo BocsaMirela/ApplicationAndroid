@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+    <EditText
+            android:paddingTop="40dp"
+            android:layout_marginRight="20dp"
+            android:layout_marginLeft="40dp"
+            android:id="@+id/addDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintBottom_toTopOf="@id/addDate"
+            app:layout_constraintTop_toTopOf="parent"
+            android:hint="@string/description"/>
+
+    <Button
+            android:layout_marginRight="20dp"
+            android:paddingTop="30dp"
+            android:id="@+id/textDate"
+            android:textSize="20sp"
+            app:layout_constraintTop_toBottomOf="@id/addDescription"
+            app:layout_constraintBottom_toTopOf="@id/addTime"
+            app:layout_constraintStart_toStartOf="@+id/addDescription"
+            app:layout_constraintEnd_toStartOf="@id/addDate"
+            app:layout_constraintRight_toLeftOf="@id/addDate"
+            app:layout_constraintLeft_toLeftOf="parent"
+            android:layout_width="wrap_content"
+            android:hint="@string/choose_a_date"
+            android:onClick="showDatePickerDialog"
+            android:layout_height="wrap_content"/>
+
+    <TextView
+            android:layout_marginLeft="20dp"
+            android:paddingTop="30dp"
+            android:id="@+id/addDate"
+            android:textSize="20sp"
+            app:layout_constraintTop_toBottomOf="@id/addDescription"
+            app:layout_constraintBottom_toTopOf="@id/addTime"
+            app:layout_constraintStart_toEndOf="@id/textDate"
+            app:layout_constraintEnd_toEndOf="@id/addDescription"
+            app:layout_constraintLeft_toRightOf="@id/textDate"
+            android:layout_width="0dp"
+            android:textColor="@android:color/background_dark"
+            android:onClick="showDatePickerDialog"
+            android:layout_height="wrap_content"/>
+
+    <Button
+            android:layout_marginRight="20dp"
+            android:layout_marginTop="10dp"
+            android:paddingTop="30dp"
+            android:id="@+id/textTime"
+            android:textSize="20sp"
+            app:layout_constraintTop_toBottomOf="@id/textDate"
+            app:layout_constraintBottom_toTopOf="@id/textImage"
+            app:layout_constraintStart_toStartOf="@id/textDate"
+            app:layout_constraintEnd_toStartOf="@id/addDate"
+            app:layout_constraintRight_toLeftOf="@id/addDate"
+            app:layout_constraintLeft_toLeftOf="parent"
+            android:layout_width="wrap_content"
+            android:hint="@string/choose_the_time"
+            android:onClick="showTimePikerDialog"
+            android:layout_height="wrap_content"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintVertical_bias="1.0"/>
+
+    <TextView
+            android:paddingTop="30dp"
+            android:layout_marginTop="10dp"
+            android:id="@+id/addTime"
+            android:textSize="20sp"
+            android:textColor="@android:color/background_dark"
+            app:layout_constraintTop_toBottomOf="@id/addDate"
+            app:layout_constraintBottom_toTopOf="@id/textImage"
+            app:layout_constraintStart_toStartOf="@+id/addDate"
+            app:layout_constraintEnd_toEndOf="@id/addDescription"
+            app:layout_constraintLeft_toRightOf="@id/textTime"
+            android:layout_width="0dp"
+            android:onClick="showTimePikerDialog"
+            android:layout_height="wrap_content"/>
+
+    <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="200dp"
+            android:id="@+id/textImage"
+            android:contentDescription="@string/image"
+            android:paddingTop="30dp"
+            app:layout_constraintStart_toStartOf="@id/textTime"
+            app:layout_constraintBottom_toTopOf="@id/viewD"
+            app:layout_constraintTop_toBottomOf="@id/textTime"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toLeftOf="@id/takeImg"
+    />
+
+    <ImageButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/takeImg"
+            android:onClick="onTakePhoto"
+            android:src="@drawable/ic_add_a_photo_black_24dp"
+            app:layout_constraintBottom_toBottomOf="@id/textImage"
+            app:layout_constraintTop_toBottomOf="@id/addTime"
+            app:layout_constraintRight_toLeftOf="@id/loadImg"
+            app:layout_constraintLeft_toRightOf="@id/textImage"
+            app:layout_constraintVertical_bias="1.0"/>
+
+    <ImageButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/loadImg"
+            android:onClick="onLoadPhoto"
+            android:src="@drawable/ic_photo_black_24dp"
+            app:layout_constraintBottom_toBottomOf="@id/textImage"
+            app:layout_constraintTop_toBottomOf="@id/addTime"
+            app:layout_constraintEnd_toEndOf="@id/addTime"
+            app:layout_constraintLeft_toRightOf="@id/takeImg"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintVertical_bias="1.0"/>
+
+    <View
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:id="@+id/viewD"
+            app:layout_constraintTop_toBottomOf="@id/textImage"
+            app:layout_constraintBottom_toBottomOf="parent"/>
+
+    <android.support.design.widget.FloatingActionButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:fabSize="normal"
+            android:layout_marginLeft="16dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="16dp"
+            android:id="@+id/addBtnDone"
+            android:onClick="onA"
+            android:layout_gravity="bottom|end"
+            app:layout_constraintEnd_toEndOf="@id/loadImg"
+            app:layout_constraintLeft_toRightOf="@id/takeImg"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:src="@drawable/ic_done_black_24dp"/>
+
+
+</android.support.constraint.ConstraintLayout>

@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">Chocolates</string>
+    <string name="title">Your chocolates:</string>
+    <string name="contentDes">Chocolate Image</string>
+    <string name="description">Description</string>
+    <string name="choose_a_date"> Select Date</string>
+    <string name="choose_the_time">Select Time</string>
+    <string name="image"> Image</string>
+    <string name="delete">DELETE</string>
+    <string name="update">UPDATE</string>
+    <string name="add">ADD NEW NOTE</string>
+</resources>
