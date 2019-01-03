@@ -3,6 +3,7 @@ package com.example.mirela.appAndroid.activities
 import android.content.Intent
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.EditText
 import android.widget.Toast
@@ -35,7 +36,8 @@ class LoginActivity : AppCompatActivity() {
 
     fun moveToMain(user: User) {
         val intent = Intent(this, MainActivity::class.java)
-        intent.putExtra("username", user.name)
+        Log.e("user", user.username)
+        intent.putExtra("username", user.username)
         this.startActivity(intent)
     }
 
@@ -46,8 +48,8 @@ class LoginActivity : AppCompatActivity() {
 
         val user = User(username, PasswordUtils.hash(password, "1234asdf"))
         try {
-//            if (Tasks.LoginTask().execute(user).get()) {
-            if (true) {
+            if (Tasks.LoginTask().execute(user).get()) {
+//            if (true) {
                 moveToMain(user)
             } else {
                 Toast.makeText(this, "Invalid credentials", Toast.LENGTH_LONG).show()

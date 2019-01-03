@@ -33,17 +33,17 @@ class UpdateActivity : AppCompatActivity(), DatePickerDialog.OnDateSetListener, 
     private val REQUEST_TAKE_PHOTO = 1
     private val REQUEST_LOAD_PHOTO = 2
     private var id: Long = 0
+    private var username = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.add_layout)
+        val item = intent.getParcelableExtra<Chocolate>("item")
 
-        val description = intent.getStringExtra("description")
-        val date = intent.getLongExtra("data", 0)
-        val imagePath = intent.getStringExtra("imagePath")
-        id = intent.getLongExtra("id", 0)
+        username = item.username
+        id = item.id
 
-        updateUI(description, date, imagePath)
+        updateUI(item.description, item.date.time, item.imagePath)
         val doneBtn = findViewById<FloatingActionButton>(R.id.addBtnDone)
         doneBtn.setOnClickListener {
             onUpdateChocolate()
@@ -81,7 +81,7 @@ class UpdateActivity : AppCompatActivity(), DatePickerDialog.OnDateSetListener, 
             val date = SimpleDateFormat("dd-MM-yyyy HH:mm", Locale.getDefault()).parse("$data $time")
 
             val intent = Intent(this, UpdateIntentService::class.java)
-            val item = Chocolate(id, description, date, imagePath, Date())
+            val item = Chocolate(id, description, date, imagePath, Date(), username)
             intent.putExtra("item", item)
 
             setResult(Activity.RESULT_OK, intent)
