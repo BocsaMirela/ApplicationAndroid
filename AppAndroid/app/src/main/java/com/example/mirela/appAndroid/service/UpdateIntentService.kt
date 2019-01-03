@@ -14,7 +14,7 @@ class UpdateIntentService : IntentService("UpdateIntentService") {
     override fun onHandleIntent(intent: Intent?) {
         intent?.apply {
             val item = intent.getParcelableExtra<Chocolate>("item")
-            val rez = ChocolatesDatabaseAdapter.updateChocolate(item.id, item.description, item.date, item.imagePath)
+            val rez = ChocolatesDatabaseAdapter.updateChocolate(item.id, item.description, item.date, item.imagePath,item.lastUpdateDate)
             if (rez > 0) {
                 Log.d("send", "sending update")
                 val sendIntent = Intent(Intent.ACTION_SEND)

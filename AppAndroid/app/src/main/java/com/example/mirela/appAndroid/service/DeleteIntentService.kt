@@ -8,6 +8,7 @@ import android.widget.Toast
 import com.example.mirela.appAndroid.POJO.Chocolate
 import com.example.mirela.appAndroid.networking.Tasks
 import com.example.mirela.appAndroid.utils.ChocolatesDatabaseAdapter
+import com.example.mirela.appAndroid.utils.DeleteItemsDBAdapter
 
 class DeleteIntentService : IntentService("DeleteIntentService") {
 
@@ -15,13 +16,14 @@ class DeleteIntentService : IntentService("DeleteIntentService") {
         val chocolate = intent?.getParcelableExtra<Chocolate>("item")
         chocolate?.also {
             if (Tasks.RemoveTask().execute(it.id.toInt()).get()) {
-                Toast.makeText(applicationContext, "Chocolate", Toast.LENGTH_LONG).show()
+                Toast.makeText(applicationContext, "Chocolate deleted", Toast.LENGTH_LONG).show()
             } else {
                 Toast.makeText(
                     applicationContext,
                     "Something went wrong or no connection! The chocolate will be deleted from your local data",
                     Toast.LENGTH_LONG
                 ).show();
+                DeleteItemsDBAdapter.insertDeletedItems(it.id.toInt(),it.username)
             }
             val rez = ChocolatesDatabaseAdapter.deleteChocolate(it.id)
             if (rez > 0) {

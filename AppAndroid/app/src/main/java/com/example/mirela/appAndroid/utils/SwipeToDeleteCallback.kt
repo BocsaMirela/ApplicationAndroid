@@ -49,7 +49,13 @@ class SwipeToDeleteCallback(
 
         val snackbar = Snackbar.make(layoutCoordinatorLayout, "Item was removed", Snackbar.LENGTH_LONG)
         snackbar.setAction("UNDO") {
-            val id = ChocolatesDatabaseAdapter.insertChocolate(item.description, item.date, item.imagePath, date)
+            val id = ChocolatesDatabaseAdapter.insertChocolate(
+                item.description,
+                item.date,
+                item.imagePath,
+                item.lastUpdateDate,
+                item.username
+            )
             item.id = id
             adapter.insertItem(item)
         }

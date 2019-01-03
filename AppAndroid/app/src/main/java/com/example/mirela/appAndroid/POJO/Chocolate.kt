@@ -9,14 +9,16 @@ class Chocolate(
     var description: String,
     var date: Date,
     var imagePath: String,
-    var lastUpdateDate: Date
+    var lastUpdateDate: Date,
+    var username:String
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
         parcel.readLong(),
         parcel.readString(),
         Date(parcel.readLong()),
         parcel.readString(),
-        Date(parcel.readLong())
+        Date(parcel.readLong()),
+        parcel.readString()
     )
 
 
@@ -26,10 +28,29 @@ class Chocolate(
         parcel.writeLong(date.time)
         parcel.writeString(imagePath)
         parcel.writeLong(lastUpdateDate.time)
+        parcel.writeString(username)
     }
 
     override fun describeContents(): Int {
         return 0
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as Chocolate
+
+        if (id != other.id) return false
+        if (username != other.username) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = id.hashCode()
+        result = 31 * result + username.hashCode()
+        return result
     }
 
     companion object CREATOR : Parcelable.Creator<Chocolate> {
@@ -41,6 +62,7 @@ class Chocolate(
             return arrayOfNulls(size)
         }
     }
+
 
 }
 

@@ -1,4 +1,5 @@
 package com.example.mirela.appAndroid.utils
+
 import android.graphics.BitmapFactory
 import android.support.v7.widget.RecyclerView
 import android.view.*
@@ -6,6 +7,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import com.example.mirela.appAndroid.POJO.Chocolate
 import com.example.mirela.appAndroid.R
+import java.lang.Exception
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
@@ -35,8 +37,11 @@ class ChocolateAdapter : RecyclerView.Adapter<ChocolateAdapter.ViewHolder>() {
         val chocolate = chocolatesList[p]
         viewHolder.txtDescription.text = chocolate.description
         viewHolder.txtData.text = formatDate(chocolate.date)
-        val bitmap = BitmapFactory.decodeFile(chocolate.imagePath)
-        viewHolder.imageView.setImageBitmap(bitmap)
+        try {
+            val bitmap = BitmapFactory.decodeFile(chocolate.imagePath)
+            viewHolder.imageView.setImageBitmap(bitmap)
+        } catch (e: Exception) {
+        }
 
     }
 

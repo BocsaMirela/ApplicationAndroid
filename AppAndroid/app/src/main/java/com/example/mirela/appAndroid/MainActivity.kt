@@ -24,14 +24,16 @@ import com.example.mirela.appAndroid.activities.UpdateActivity
 import com.example.mirela.appAndroid.networking.ChocolateContentProvider
 import com.example.mirela.appAndroid.networking.Tasks
 import com.example.mirela.appAndroid.utils.*
+import java.lang.Exception
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.collections.ArrayList
 
 // The authority for the sync adapter's content provider
 const val AUTHORITY = "com.example.android.datasync.provider"
-// An account type, in the form of a domain name
+// An account type, in the form of a domain username
 const val ACCOUNT_TYPE = "example.com"
-// The account name
+// The account username
 const val ACCOUNT = "dummyaccount"
 
 class MainActivity : AppCompatActivity() {
@@ -40,6 +42,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var viewManager: RecyclerView.LayoutManager
     private lateinit var adapter: ChocolateAdapter
     private lateinit var mAccount: Account
+    private lateinit var username: String
 
 
     private val ADD_NEW_PHOTO_REQUEST = 1
@@ -53,6 +56,7 @@ class MainActivity : AppCompatActivity() {
 
         val dbHelper = DbHelper(this)
         ChocolatesDatabaseAdapter.setDbHelper(dbHelper)
+        DeleteItemsDBAdapter.setDbHelper(dbHelper)
 
         recyclerView = this.findViewById(R.id.savedChocolates)
 
@@ -70,10 +74,32 @@ class MainActivity : AppCompatActivity() {
                 )
             )
         itemTouchHelper.attachToRecyclerView(recyclerView)
-
-        LoadAsyncTask(adapter, ChocolatesDatabaseAdapter).execute()
-
+        if (savedInstanceState != null) {
+            val items = savedInstanceState.getParcelableArrayList<Chocolate>("items")
+            adapter.setChocolatesList(items)
+            username = savedInstanceState.getString("username")
+        } else {
+            val serverData = Tasks.GetAllTask().execute().get()
+            if (serverData != null) {
+                syncronizeData(serverData)
+            } else {
+                Toast.makeText(
+                    applicationContext,
+                    "Something went wrong or no connection! Loading local data",
+                    Toast.LENGTH_LONG
+                ).show();
+                val items = LoadAsyncTask(adapter).execute().get()
+                adapter.setChocolatesList(items)
+                adapter.notifyDataSetChanged()
+            }
 //        mAccount = createSyncAcount()
+            val extras = intent.getStringExtra("username")
+            extras?.also {
+                username = it
+            }
+            Log.e("username", username)
+            tryToConnect()
+        }
     }
 
     private fun createSyncAcount(): Account {
@@ -99,10 +125,10 @@ class MainActivity : AppCompatActivity() {
                     val date = SimpleDateFormat("dd-MM-yyyy HH:mm").parse("$dataR $time")
                     val dateUpdate = Date()
 
-                    val newId = ChocolatesDatabaseAdapter.insertChocolate(description, date, imagePath, dateUpdate)
+                    val newId = ChocolatesDatabaseAdapter.insertChocolate(description, date, imagePath, dateUpdate,username)
 
                     if (newId > 0) {
-                        val item = Chocolate(newId, description, date, imagePath, dateUpdate)
+                        val item = Chocolate(newId, description, date, imagePath, dateUpdate, username)
                         adapter.insertItem(item)
                         if (Tasks.AddTask().execute(item).get()) {
                             Toast.makeText(this@MainActivity, "Add was done", Toast.LENGTH_LONG).show()
@@ -118,20 +144,11 @@ class MainActivity : AppCompatActivity() {
             }
         } else if (requestCode == UPDATE_PHOTO_REQUEST) {
             if (resultCode == Activity.RESULT_OK) {
-                val chocolate: Chocolate? = intent?.getParcelableExtra("item")
+                val chocolate = data?.getParcelableExtra<Chocolate>("item")
                 chocolate?.apply {
                     adapter.removeItem(chocolate)
                     adapter.insertItem(chocolate)
                     adapter.notifyDataSetChanged()
-                }
-                if (Tasks.UpdateTask().execute(chocolate).get()) {
-                    Toast.makeText(this@MainActivity, "Update was done", Toast.LENGTH_LONG).show()
-                } else {
-                    Toast.makeText(
-                        applicationContext,
-                        "Something went wrong or no connection! The new chocolate will be updated in your local data",
-                        Toast.LENGTH_LONG
-                    ).show();
                 }
             }
         }
@@ -156,10 +173,7 @@ class MainActivity : AppCompatActivity() {
     private fun updateChocolate(id: Int) {
         val intent = Intent(this, UpdateActivity::class.java)
         val chocolate = adapter.getChocolatesList()[id]
-        intent.putExtra("description", chocolate.description)
-        intent.putExtra("imagePath", chocolate.imagePath)
-        intent.putExtra("data", chocolate.date.time)
-        intent.putExtra("id", chocolate.id)
+        intent.putExtra("item", chocolate)
         startActivityForResult(intent, UPDATE_PHOTO_REQUEST)
     }
 
@@ -175,8 +189,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     class LoadAsyncTask(
-        private val adapter: ChocolateAdapter,
-        private val NotesDatabaseAdapter: ChocolatesDatabaseAdapter
+        private val adapter: ChocolateAdapter
     ) :
         AsyncTask<Void, Void, List<Chocolate>>() {
         override fun doInBackground(vararg params: Void?): List<Chocolate> {
@@ -185,10 +198,68 @@ class MainActivity : AppCompatActivity() {
 
         override fun onPostExecute(result: List<Chocolate>?) {
             super.onPostExecute(result)
-            Log.d("size", result?.size.toString())
-            adapter.setChocolatesList(result ?: ArrayList())
-            adapter.notifyDataSetChanged()
         }
 
+    }
+
+    fun syncronizeData(serverData: List<Chocolate>) {
+        deleteItems()
+        val totalList: MutableList<Chocolate> = ArrayList()
+        val localList: List<Chocolate> = LoadAsyncTask(adapter).execute().get()
+        val thread = Thread {
+            totalList.addAll(serverData)
+            localList.forEach { c ->
+                if (totalList.contains(c)) {
+                    val index = localList.indexOf(c)
+                    val oldC = localList[index]
+                    if (oldC.lastUpdateDate < c.lastUpdateDate) {
+                        totalList.remove(oldC)
+                        totalList.add(c)
+                        Tasks.UpdateTask().execute(c)
+                    }
+                } else {
+                    totalList.add(c)
+                    Tasks.AddTask().execute(c)
+                }
+            }
+        }
+        thread.start()
+        thread.join()
+
+        Log.e("size", totalList.size.toString())
+        adapter.setChocolatesList(totalList)
+        adapter.notifyDataSetChanged()
+    }
+
+    private fun deleteItems() {
+        val deletedChoco = DeleteItemsDBAdapter.getAllDeletedChocolates()
+        deletedChoco.forEach {
+            val rez = Tasks.RemoveTask().execute(it.first.toInt()).get()
+            if (rez) {
+                DeleteItemsDBAdapter.deleteItem(it.first, it.second)
+            }
+        }
+    }
+
+    fun tryToConnect() {
+        Thread {
+            while (true) {
+                try {
+                    Thread.sleep(1000000000)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+                val serverData = Tasks.GetAllTask().execute().get()
+                if (serverData != null) {
+                    syncronizeData(serverData)
+                }
+            }
+        }.start()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle?) {
+        outState?.putString("username", username)
+        outState?.putParcelableArrayList("items", ArrayList(adapter.getChocolatesList()))
+        super.onSaveInstanceState(outState)
     }
 }

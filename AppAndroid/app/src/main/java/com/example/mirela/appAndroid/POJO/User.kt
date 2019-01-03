@@ -1,3 +1,3 @@
 package com.example.mirela.appAndroid.POJO
 
-class User(var name: String?, var password: String?)
+class User(var username: String?, var password: String?)

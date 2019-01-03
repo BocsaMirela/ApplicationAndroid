@@ -17,7 +17,8 @@ object ChocolatesDatabaseAdapter {
         description: String,
         data: Date,
         imagePath: String,
-        dateUpdated: Date
+        dateUpdated: Date,
+        username: String
     ): Long {
         val sqlSQLiteDatabase = dbHelper.writableDatabase
 
@@ -25,6 +26,8 @@ object ChocolatesDatabaseAdapter {
             put(DbHelper.COLUMN_DESCRIPTION, description)
             put(DbHelper.COLUMN_IMAGE_PATH, imagePath)
             put(DbHelper.COLUMN_DATE, data.time)
+            put(DbHelper.COLUMN_DATE_UPDATED, dateUpdated.time)
+            put(DbHelper.COLUMN_USERNAME, username)
         }
         val newRowId = sqlSQLiteDatabase.insert(DbHelper.TABLE_NAME, null, values)
         sqlSQLiteDatabase.close()
@@ -33,15 +36,16 @@ object ChocolatesDatabaseAdapter {
 
     fun getAllChocolates(): List<Chocolate> {
         val cursor = getChocolatesCursor()
-
         val chocolatesList = mutableListOf<Chocolate>()
         with(cursor) {
             while (moveToNext()) {
                 val chocolate = com.example.mirela.appAndroid.POJO.Chocolate(
-                        cursor.getLong(cursor.getColumnIndex(com.example.mirela.appAndroid.utils.DbHelper.UID)),
-                        cursor.getString(cursor.getColumnIndex(com.example.mirela.appAndroid.utils.DbHelper.COLUMN_DESCRIPTION)),
-                        java.util.Date(cursor.getLong(cursor.getColumnIndex(com.example.mirela.appAndroid.utils.DbHelper.Companion.COLUMN_DATE))),
-                        cursor.getString(cursor.getColumnIndex(com.example.mirela.appAndroid.utils.DbHelper.COLUMN_IMAGE_PATH))
+                    cursor.getLong(cursor.getColumnIndex(DbHelper.UID)),
+                    cursor.getString(cursor.getColumnIndex(DbHelper.COLUMN_DESCRIPTION)),
+                    java.util.Date(cursor.getLong(cursor.getColumnIndex(DbHelper.COLUMN_DATE))),
+                    cursor.getString(cursor.getColumnIndex(DbHelper.COLUMN_IMAGE_PATH)),
+                    java.util.Date(cursor.getLong(cursor.getColumnIndex(DbHelper.COLUMN_DATE_UPDATED))),
+                    cursor.getString(cursor.getColumnIndex(DbHelper.COLUMN_USERNAME))
                 )
                 chocolatesList.add(chocolate)
             }
@@ -57,7 +61,13 @@ object ChocolatesDatabaseAdapter {
 
     }
 
-    fun updateChocolate(id: Long, newDescription: String, newDate: Date, newImagePath: String): Int {
+    fun updateChocolate(
+        id: Long,
+        newDescription: String,
+        newDate: Date,
+        newImagePath: String,
+        lastUpdateDate: Date
+    ): Int {
 
         val db = dbHelper.writableDatabase
 
@@ -65,6 +75,7 @@ object ChocolatesDatabaseAdapter {
         contentValues.put(DbHelper.COLUMN_DESCRIPTION, newDescription)
         contentValues.put(DbHelper.COLUMN_IMAGE_PATH, newImagePath)
         contentValues.put(DbHelper.COLUMN_DATE, newDate.time)
+        contentValues.put(DbHelper.COLUMN_DATE_UPDATED, lastUpdateDate.time)
         val whereArgs = arrayOf(id.toString())
 
         val rez = db.update(DbHelper.TABLE_NAME, contentValues, "${DbHelper.UID} = ?", whereArgs)
@@ -75,11 +86,18 @@ object ChocolatesDatabaseAdapter {
         val db = dbHelper.readableDatabase
         val qb = SQLiteQueryBuilder()
         qb.tables = DbHelper.TABLE_NAME
-        val projection = arrayOf(DbHelper.UID, DbHelper.COLUMN_DESCRIPTION, DbHelper.COLUMN_DATE, DbHelper.COLUMN_IMAGE_PATH)
+        val projection =
+            arrayOf(
+                DbHelper.UID,
+                DbHelper.COLUMN_DESCRIPTION,
+                DbHelper.COLUMN_DATE,
+                DbHelper.COLUMN_IMAGE_PATH,
+                DbHelper.COLUMN_DATE_UPDATED,
+                DbHelper.COLUMN_USERNAME
+            )
 
         val sortOrder = "${DbHelper.COLUMN_DATE} ASC"
         val cursor = qb.query(db, projection, null, null, null, null, sortOrder)
-        cursor.moveToFirst()
         return cursor
     }
 
