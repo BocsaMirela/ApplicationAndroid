@@ -3,8 +3,6 @@ package com.example.mirela.appAndroid.utils
 import android.content.ContentValues
 import android.database.Cursor
 import android.database.sqlite.SQLiteQueryBuilder
-import com.example.mirela.appAndroid.POJO.Chocolate
-import java.util.*
 
 object DeleteItemsDBAdapter {
     private lateinit var dbHelper: DbHelper

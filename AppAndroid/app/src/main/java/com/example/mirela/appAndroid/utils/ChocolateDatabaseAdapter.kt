@@ -3,7 +3,7 @@ package com.example.mirela.appAndroid.utils
 import android.content.ContentValues
 import android.database.Cursor
 import android.database.sqlite.SQLiteQueryBuilder
-import com.example.mirela.appAndroid.POJO.Chocolate
+import com.example.mirela.appAndroid.chocolate.Chocolate
 import java.util.*
 
 object ChocolatesDatabaseAdapter {
@@ -39,13 +39,12 @@ object ChocolatesDatabaseAdapter {
         val chocolatesList = mutableListOf<Chocolate>()
         with(cursor) {
             while (moveToNext()) {
-                val chocolate = com.example.mirela.appAndroid.POJO.Chocolate(
+                val chocolate = Chocolate(
                     cursor.getLong(cursor.getColumnIndex(DbHelper.UID)),
                     cursor.getString(cursor.getColumnIndex(DbHelper.COLUMN_DESCRIPTION)),
-                    java.util.Date(cursor.getLong(cursor.getColumnIndex(DbHelper.COLUMN_DATE))),
+                    cursor.getLong(cursor.getColumnIndex(DbHelper.COLUMN_DATE)),
                     cursor.getString(cursor.getColumnIndex(DbHelper.COLUMN_IMAGE_PATH)),
-                    java.util.Date(cursor.getLong(cursor.getColumnIndex(DbHelper.COLUMN_DATE_UPDATED))),
-                    cursor.getString(cursor.getColumnIndex(DbHelper.COLUMN_USERNAME))
+                    cursor.getString(cursor.getColumnIndex(DbHelper.COLUMN_USERNAME)).toInt()
                 )
                 chocolatesList.add(chocolate)
             }

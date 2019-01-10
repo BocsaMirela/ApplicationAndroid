@@ -12,6 +12,7 @@ import android.support.v7.widget.RecyclerView
 import android.support.v7.widget.helper.ItemTouchHelper
 import com.example.mirela.appAndroid.R
 import com.example.mirela.appAndroid.service.DeleteIntentService
+import java.util.*
 
 class SwipeToDeleteCallback(
     private val context: Context,
@@ -42,7 +43,11 @@ class SwipeToDeleteCallback(
         val item = adapter.getChocolatesList()[position]
 
         val intent = Intent(context, DeleteIntentService::class.java)
+        val sessionManager =SessionManager(context.applicationContext)
         intent.putExtra("item", item)
+        intent.putExtra("token",sessionManager.userToken)
+        intent.putExtra("userIs",sessionManager.userId)
+
         context.startService(intent)
 
         adapter.removeItem(item)
@@ -50,11 +55,11 @@ class SwipeToDeleteCallback(
         val snackbar = Snackbar.make(layoutCoordinatorLayout, "Item was removed", Snackbar.LENGTH_LONG)
         snackbar.setAction("UNDO") {
             val id = ChocolatesDatabaseAdapter.insertChocolate(
-                item.description,
-                item.date,
+                item.body,
+                Date(item.date),
                 item.imagePath,
-                item.lastUpdateDate,
-                item.username
+                Date(item.date),
+                item.userId.toString()
             )
             item.id = id
             adapter.insertItem(item)

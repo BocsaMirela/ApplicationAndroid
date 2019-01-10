@@ -5,7 +5,7 @@ import android.support.v7.widget.RecyclerView
 import android.view.*
 import android.widget.ImageView
 import android.widget.TextView
-import com.example.mirela.appAndroid.POJO.Chocolate
+import com.example.mirela.appAndroid.chocolate.Chocolate
 import com.example.mirela.appAndroid.R
 import java.lang.Exception
 import java.text.SimpleDateFormat
@@ -35,8 +35,8 @@ class ChocolateAdapter : RecyclerView.Adapter<ChocolateAdapter.ViewHolder>() {
 
     override fun onBindViewHolder(viewHolder: ViewHolder, p: Int) {
         val chocolate = chocolatesList[p]
-        viewHolder.txtDescription.text = chocolate.description
-        viewHolder.txtData.text = formatDate(chocolate.date)
+        viewHolder.txtDescription.text = chocolate.body
+        viewHolder.txtData.text = Date(chocolate.date).toString()
         try {
             val bitmap = BitmapFactory.decodeFile(chocolate.imagePath)
             viewHolder.imageView.setImageBitmap(bitmap)
