@@ -15,12 +15,17 @@ import android.support.design.widget.FloatingActionButton
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.FileProvider
 import android.support.v7.app.AppCompatActivity
+import android.support.v7.widget.Toolbar
 import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.widget.*
 import com.example.mirela.appAndroid.R
-import com.example.mirela.appAndroid.utils.DatePickerFragment
-import com.example.mirela.appAndroid.utils.TimePickerFragment
+import com.example.mirela.appAndroid.chocolate.Chocolate
+import com.example.mirela.appAndroid.fragments.DatePickerFragment
+import com.example.mirela.appAndroid.utils.SessionManager
+import com.example.mirela.appAndroid.fragments.TimePickerFragment
 import java.io.File
 import java.lang.Exception
 import java.text.SimpleDateFormat
@@ -30,10 +35,19 @@ class AddActivity : AppCompatActivity(), DatePickerDialog.OnDateSetListener, Tim
     private lateinit var imagePath: String
     private val REQUEST_TAKE_PHOTO = 1
     private val REQUEST_LOAD_PHOTO = 2
+    private lateinit var sessionManager: SessionManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.add_layout)
+
+        val toolbar = findViewById<Toolbar>(R.id.toolbar)
+        setSupportActionBar(toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        actionBar?.setDisplayHomeAsUpEnabled(true)
+
+        sessionManager = SessionManager(applicationContext)
+        sessionManager.checkLogin()
 
         val doneBtn = findViewById<FloatingActionButton>(R.id.addBtnDone)
         doneBtn.setOnClickListener {
@@ -57,12 +71,12 @@ class AddActivity : AppCompatActivity(), DatePickerDialog.OnDateSetListener, Tim
             val data = findViewById<TextView>(R.id.addDate).text.toString()
             val time = findViewById<TextView>(R.id.addTime).text.toString()
             val imagePath = findViewById<ImageView>(R.id.textImage).tag.toString()
+            val date = SimpleDateFormat("dd-MM-yyyy HH:mm").parse("$data $time")
+            val userId = sessionManager.userId
 
             val resultIntent = Intent()
-            resultIntent.putExtra("description", description)
-            resultIntent.putExtra("data", data)
-            resultIntent.putExtra("time", time)
-            resultIntent.putExtra("imagePath", imagePath)
+            val chocolate = Chocolate(0, description, date.time, imagePath, userId!!.toInt())
+            resultIntent.putExtra("item", chocolate)
             setResult(Activity.RESULT_OK, resultIntent)
             this.finish()
 
@@ -161,5 +175,22 @@ class AddActivity : AppCompatActivity(), DatePickerDialog.OnDateSetListener, Tim
             } else {
                 Toast.makeText(this, "Permision denied", Toast.LENGTH_LONG)
             }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.toolbar_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+        return when (item?.itemId) {
+            R.id.logoutMenu -> {
+                sessionManager.logoutUser()
+                true
+            }
+            else -> {
+                super.onOptionsItemSelected(item)
+            }
+        }
     }
 }

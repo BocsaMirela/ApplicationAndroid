@@ -15,14 +15,17 @@ import android.support.design.widget.FloatingActionButton
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.FileProvider
 import android.support.v7.app.AppCompatActivity
+import android.support.v7.widget.Toolbar
 import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.widget.*
-import com.example.mirela.appAndroid.POJO.Chocolate
+import com.example.mirela.appAndroid.chocolate.Chocolate
 import com.example.mirela.appAndroid.R
-import com.example.mirela.appAndroid.service.UpdateIntentService
-import com.example.mirela.appAndroid.utils.DatePickerFragment
-import com.example.mirela.appAndroid.utils.TimePickerFragment
+import com.example.mirela.appAndroid.fragments.DatePickerFragment
+import com.example.mirela.appAndroid.utils.SessionManager
+import com.example.mirela.appAndroid.fragments.TimePickerFragment
 import java.io.File
 import java.lang.Exception
 import java.text.SimpleDateFormat
@@ -34,16 +37,26 @@ class UpdateActivity : AppCompatActivity(), DatePickerDialog.OnDateSetListener, 
     private val REQUEST_LOAD_PHOTO = 2
     private var id: Long = 0
     private var username = ""
+    private lateinit var sessionManager: SessionManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.add_layout)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        actionBar?.setDisplayHomeAsUpEnabled(true)
+
+        val toolbar = findViewById<Toolbar>(R.id.toolbar)
+        setSupportActionBar(toolbar)
+
+        sessionManager = SessionManager(applicationContext)
+        sessionManager.checkLogin()
+
         val item = intent.getParcelableExtra<Chocolate>("item")
 
-        username = item.username
+        username = sessionManager.userToken!!
         id = item.id
 
-        updateUI(item.description, item.date.time, item.imagePath)
+        updateUI(item.body, item.date, item.imagePath)
         val doneBtn = findViewById<FloatingActionButton>(R.id.addBtnDone)
         doneBtn.setOnClickListener {
             onUpdateChocolate()
@@ -79,14 +92,13 @@ class UpdateActivity : AppCompatActivity(), DatePickerDialog.OnDateSetListener, 
             val time = findViewById<TextView>(R.id.addTime).text.toString()
             val imagePath = findViewById<ImageView>(R.id.textImage).tag.toString()
             val date = SimpleDateFormat("dd-MM-yyyy HH:mm", Locale.getDefault()).parse("$data $time")
+            val userId=sessionManager.userId
 
-            val intent = Intent(this, UpdateIntentService::class.java)
-            val item = Chocolate(id, description, date, imagePath, Date(), username)
+            val intent = Intent()
+            val item = Chocolate(id, description, date.time, imagePath, userId!!.toInt())
             intent.putExtra("item", item)
 
             setResult(Activity.RESULT_OK, intent)
-            startService(intent)
-
             this.finish()
 
         } catch (e: Exception) {
@@ -186,5 +198,22 @@ class UpdateActivity : AppCompatActivity(), DatePickerDialog.OnDateSetListener, 
             } else {
                 Toast.makeText(this, "Permision denied", Toast.LENGTH_LONG)
             }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.toolbar_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+        return when (item?.itemId) {
+            R.id.logoutMenu -> {
+                sessionManager.logoutUser()
+                true
+            }
+            else -> {
+                super.onOptionsItemSelected(item)
+            }
+        }
     }
 }
