@@ -12,7 +12,7 @@ import com.example.mirela.appAndroid.POJO.LoginResponse
 
 import com.example.mirela.appAndroid.R
 import com.example.mirela.appAndroid.utils.SessionManager
-import com.example.user.myapplication.modelviews.LoginModelView
+import com.example.mirela.appAndroid.modelviews.LoginModelView
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
