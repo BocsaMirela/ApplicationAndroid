@@ -1,62 +1,85 @@
 package com.example.mirela.appAndroid
 
-import android.accounts.Account
-import android.accounts.AccountManager
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.content.ContentResolver
-import android.content.Context
+import android.arch.lifecycle.Observer
+import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
-import android.os.AsyncTask
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
+import android.support.v7.widget.Toolbar
 import android.support.v7.widget.helper.ItemTouchHelper
 import android.util.Log
 import android.view.ContextMenu
+import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.ProgressBar
 import android.widget.Toast
-import com.example.mirela.appAndroid.POJO.Chocolate
+import com.example.mirela.appAndroid.chocolate.Chocolate
 import com.example.mirela.appAndroid.activities.AddActivity
 import com.example.mirela.appAndroid.activities.UpdateActivity
-import com.example.mirela.appAndroid.networking.ChocolateContentProvider
-import com.example.mirela.appAndroid.networking.Tasks
+import com.example.mirela.appAndroid.chocolate.ChocolateDatabase
+import com.example.mirela.appAndroid.modelviews.ChocolatesViewModel
+import com.example.mirela.appAndroid.syncronize.DeletedItemsDAO
+import com.example.mirela.appAndroid.syncronize.Updater
 import com.example.mirela.appAndroid.utils.*
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import java.io.Console
 import java.lang.Exception
-import java.text.SimpleDateFormat
-import java.util.*
 import kotlin.collections.ArrayList
 
-// The authority for the sync adapter's content provider
-const val AUTHORITY = "com.example.android.datasync.provider"
-// An account type, in the form of a domain username
-const val ACCOUNT_TYPE = "example.com"
-// The account username
-const val ACCOUNT = "dummyaccount"
-
-class MainActivity : AppCompatActivity() {
-
+class MainActivity : AppCompatActivity(), OnClickInterface {
     private lateinit var recyclerView: RecyclerView
     private lateinit var viewManager: RecyclerView.LayoutManager
     private lateinit var adapter: ChocolateAdapter
-    private lateinit var mAccount: Account
-    private lateinit var username: String
+    private lateinit var sessionManager: SessionManager
+    private lateinit var chocolatesViewModel: ChocolatesViewModel
+    private lateinit var deletedItemsDAO: DeletedItemsDAO
+    private lateinit var mProgressBar: ProgressBar
+    private var lastID = 0
 
 
     private val ADD_NEW_PHOTO_REQUEST = 1
     private val UPDATE_PHOTO_REQUEST = 2
-//    private lateinit var myBroadcastReceiver: BroadcastReceiver
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        val toolbar = findViewById<Toolbar>(R.id.toolbar)
+        setSupportActionBar(toolbar)
 
-        val dbHelper = DbHelper(this)
-        ChocolatesDatabaseAdapter.setDbHelper(dbHelper)
-        DeleteItemsDBAdapter.setDbHelper(dbHelper)
+        initialize()
+        adapter.setOnClickListener(this)
+        val itemTouchHelper = ItemTouchHelper(
+            SwipeToDeleteCallback(
+                this@MainActivity,
+                adapter,
+                chocolatesViewModel,
+                deletedItemsDAO,
+                findViewById(R.id.coordinatorLayout)
+            )
+        )
+        itemTouchHelper.attachToRecyclerView(recyclerView)
+        getDataFromServer()
+    }
+
+    override fun onClick(view: View, position: Int) {
+        updateChocolate(position)
+    }
+
+    private fun initialize() {
+        sessionManager = SessionManager(applicationContext)
+        sessionManager.checkLogin()
+        val token = sessionManager.userToken!!
+
+        chocolatesViewModel = ViewModelProviders.of(this, ChocolatesViewModel.Factory(token, application))
+            .get(ChocolatesViewModel::class.java)
 
         recyclerView = this.findViewById(R.id.savedChocolates)
 
@@ -65,90 +88,53 @@ class MainActivity : AppCompatActivity() {
         adapter = ChocolateAdapter()
         recyclerView.adapter = adapter
 
-        val itemTouchHelper =
-            ItemTouchHelper(
-                SwipeToDeleteCallback(
-                    this@MainActivity,
-                    adapter,
-                    findViewById(R.id.coordinatorLayout)
-                )
-            )
-        itemTouchHelper.attachToRecyclerView(recyclerView)
-        if (savedInstanceState != null) {
-            val items = savedInstanceState.getParcelableArrayList<Chocolate>("items")
-            adapter.setChocolatesList(items)
-            username = savedInstanceState.getString("username")
-        } else {
-            val serverData = Tasks.GetAllTask().execute().get()
-            if (serverData != null) {
-                syncronizeData(serverData)
-            } else {
-                Toast.makeText(
-                    applicationContext,
-                    "Something went wrong or no connection! Loading local data",
-                    Toast.LENGTH_LONG
-                ).show();
-                val items = LoadAsyncTask(adapter).execute().get()
-                adapter.setChocolatesList(items)
+        deletedItemsDAO = ChocolateDatabase.getAppDatabase(application).deletedItemsDAO()
+
+        mProgressBar = findViewById(R.id.progress_bar)
+
+        recyclerView.visibility = View.GONE
+        mProgressBar.visibility = View.VISIBLE
+        Log.e("visible initialize ", (mProgressBar.visibility == View.VISIBLE).toString())
+
+        chocolatesViewModel.getAllChocolates().observe(this, Observer { chocolates ->
+            Log.e(" obs ", chocolates?.size.toString())
+            chocolates?.also {
+                if (chocolatesViewModel.items.value == null) {
+                    chocolatesViewModel.items.value = chocolates
+                }
+            }
+
+        })
+
+        chocolatesViewModel.items.observe(this, Observer { chocolates ->
+            Log.e(" obs bun ", chocolates?.size.toString())
+            chocolates?.also {
+                adapter.setChocolatesList(chocolates)
                 adapter.notifyDataSetChanged()
-            }
-//        mAccount = createSyncAcount()
-            val extras = intent.getStringExtra("username")
-            extras?.also {
-                username = it
-            }
-            Log.e("username", username)
-            tryToConnect()
-        }
-    }
-
-    private fun createSyncAcount(): Account {
-        val accountManager = getSystemService(Context.ACCOUNT_SERVICE) as AccountManager
-        return Account(ACCOUNT, ACCOUNT_TYPE).also { newAccount ->
-            accountManager.addAccountExplicitly(newAccount, null, null)
-            ContentResolver.setSyncAutomatically(newAccount, ChocolateContentProvider.AUTHORITY, true);
-            if (accountManager.addAccountExplicitly(newAccount, null, null)) {
-            } else {
+                Log.e(" obs bun", " invisible true ")
             }
 
-        }
+        })
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        makeProgressBarVisible()
         if (requestCode == ADD_NEW_PHOTO_REQUEST) {
             if (resultCode == Activity.RESULT_OK) {
                 data?.apply {
-                    val description = data.getStringExtra("description")
-                    val dataR = data.getStringExtra("data")
-                    val time = data.getStringExtra("time")
-                    val imagePath = data.getStringExtra("imagePath")
-                    val date = SimpleDateFormat("dd-MM-yyyy HH:mm").parse("$dataR $time")
-                    val dateUpdate = Date()
-
-                    val newId = ChocolatesDatabaseAdapter.insertChocolate(description, date, imagePath, dateUpdate,username)
-
-                    if (newId > 0) {
-                        val item = Chocolate(newId, description, date, imagePath, dateUpdate, username)
-                        adapter.insertItem(item)
-                        if (Tasks.AddTask().execute(item).get()) {
-                            Toast.makeText(this@MainActivity, "Add was done", Toast.LENGTH_LONG).show()
-                        } else {
-                            Toast.makeText(
-                                applicationContext,
-                                "Something went wrong or no connection! The new chocolate will be saved in your local data",
-                                Toast.LENGTH_LONG
-                            ).show();
-                        }
-                    }
+                    val chocolate = data.getParcelableExtra<Chocolate>("item")
+                    lastID++
+                    chocolate.id = lastID.toLong()
+                    addChocolateToServer(chocolate)
                 }
             }
         } else if (requestCode == UPDATE_PHOTO_REQUEST) {
             if (resultCode == Activity.RESULT_OK) {
                 val chocolate = data?.getParcelableExtra<Chocolate>("item")
-                chocolate?.apply {
-                    adapter.removeItem(chocolate)
-                    adapter.insertItem(chocolate)
-                    adapter.notifyDataSetChanged()
+                val token = sessionManager.userToken
+                val userId = sessionManager.userId?.toInt()
+                chocolate?.also {
+                    updateFromServer(token, userId, chocolate)
                 }
             }
         }
@@ -177,89 +163,154 @@ class MainActivity : AppCompatActivity() {
         startActivityForResult(intent, UPDATE_PHOTO_REQUEST)
     }
 
-    override fun onStop() {
-        super.onStop()
-//        LocalBroadcastManager.getInstance(applicationContext).unregisterReceiver(myBroadcastReceiver)
-
-    }
-
     fun onAdd(v: View) {
         val intent = Intent(this, AddActivity::class.java)
         startActivityForResult(intent, ADD_NEW_PHOTO_REQUEST)
     }
 
-    class LoadAsyncTask(
-        private val adapter: ChocolateAdapter
-    ) :
-        AsyncTask<Void, Void, List<Chocolate>>() {
-        override fun doInBackground(vararg params: Void?): List<Chocolate> {
-            return ChocolatesDatabaseAdapter.getAllChocolates()
-        }
-
-        override fun onPostExecute(result: List<Chocolate>?) {
-            super.onPostExecute(result)
-        }
-
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.toolbar_menu, menu)
+        return true
     }
 
-    fun syncronizeData(serverData: List<Chocolate>) {
-        deleteItems()
-        val totalList: MutableList<Chocolate> = ArrayList()
-        val localList: List<Chocolate> = LoadAsyncTask(adapter).execute().get()
-        val thread = Thread {
-            totalList.addAll(serverData)
-            localList.forEach { c ->
-                if (totalList.contains(c)) {
-                    val index = localList.indexOf(c)
-                    val oldC = localList[index]
-                    if (oldC.lastUpdateDate < c.lastUpdateDate) {
-                        totalList.remove(oldC)
-                        totalList.add(c)
-                        Tasks.UpdateTask().execute(c)
+    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+        return when (item?.itemId) {
+            R.id.logoutMenu -> {
+                sessionManager.logoutUser()
+                true
+            }
+            else -> {
+                super.onOptionsItemSelected(item)
+            }
+        }
+    }
+
+    private fun getDataFromServer() {
+        Updater.syncronizeData(
+            chocolatesViewModel,
+            deletedItemsDAO,
+            applicationContext
+        )
+        chocolatesViewModel.getChocolatesFromServer().enqueue(object : Callback<List<Chocolate>> {
+            override fun onResponse(call: Call<List<Chocolate>>, response: Response<List<Chocolate>>) {
+                println(" m-am conectat" + response.body())
+                if (response.body() != null) {
+                    val chocolates = response.body()
+                    println("m-am conectat " + chocolates?.size)
+                    chocolates?.also {
+                        if (chocolates.isNotEmpty()) {
+                            lastID = chocolates.sortedBy { chocolate -> chocolate.id }.last().id.toInt() + 1
+                            makeRecyclerViewVisible()
+
+                            chocolatesViewModel.items.value = chocolates
+                            Updater.syncronizeDataLocal(chocolatesViewModel, chocolates)
+                        }
                     }
-                } else {
-                    totalList.add(c)
-                    Tasks.AddTask().execute(c)
+
                 }
             }
+
+            override fun onFailure(call: Call<List<Chocolate>>, t: Throwable) {
+                Toast.makeText(
+                    applicationContext,
+                    "Something went wrong or no connection! Loading local data",
+                    Toast.LENGTH_LONG
+                ).show()
+                val items = chocolatesViewModel.items.value
+                items?.also {
+
+                    makeRecyclerViewVisible()
+                    adapter.setChocolatesList(items)
+                    adapter.notifyDataSetChanged()
+                }
+                Updater.tryToConnect(chocolatesViewModel, deletedItemsDAO, applicationContext)
+            }
+
+        })
+    }
+
+    private fun addChocolateToServer(chocolate: Chocolate) {
+        chocolatesViewModel.addChocolateServer(chocolate).enqueue(object : Callback<Chocolate> {
+            override fun onFailure(call: Call<Chocolate>, t: Throwable) {
+                Toast.makeText(
+                    applicationContext,
+                    "Something went wrong or no connection! The new chocolate will be saved in your local data",
+                    Toast.LENGTH_LONG
+                ).show()
+                chocolate.wasInserted = 0
+                val newR = chocolatesViewModel.saveChocolate(chocolate)
+                if (newR > 0) {
+                    Log.e("added ", newR.toString())
+                    adapter.insertItem(chocolate)
+                    chocolatesViewModel.items.value = adapter.getChocolatesList()
+                    makeRecyclerViewVisible()
+                }
+            }
+
+
+            override fun onResponse(call: Call<Chocolate>, response: Response<Chocolate>) {
+                Toast.makeText(this@MainActivity, "Add was done", Toast.LENGTH_LONG).show()
+                val newR = chocolatesViewModel.saveChocolate(chocolate)
+                if (newR > 0) {
+                    adapter.insertItem(chocolate)
+                    chocolatesViewModel.items.value = adapter.getChocolatesList()
+                    makeRecyclerViewVisible()
+
+                }
+            }
+
+        })
+    }
+
+    private fun updateFromServer(token: String?, userId: Int?, chocolate: Chocolate) {
+        chocolatesViewModel.updateChocolateServer(chocolate, userId).enqueue(object : Callback<Chocolate> {
+            override fun onFailure(call: Call<Chocolate>, t: Throwable) {
+                Toast.makeText(
+                    applicationContext,
+                    "Something went wrong or no connection! Update from local data",
+                    Toast.LENGTH_LONG
+                ).show()
+
+                chocolate.wasUpdated = 0
+                chocolatesViewModel.updateChocolate(chocolate)
+
+                adapter.removeItem(chocolate)
+                adapter.insertItem(chocolate)
+
+                chocolatesViewModel.items.value = adapter.getChocolatesList()
+                makeRecyclerViewVisible()
+
+            }
+
+            override fun onResponse(call: Call<Chocolate>, response: Response<Chocolate>) {
+                Toast.makeText(applicationContext, "Update done", Toast.LENGTH_LONG).show()
+                chocolatesViewModel.updateChocolate(chocolate)
+                adapter.removeItem(chocolate)
+                adapter.insertItem(chocolate)
+                chocolatesViewModel.items.value = adapter.getChocolatesList()
+                makeRecyclerViewVisible()
+
+            }
+
+        })
+    }
+
+    fun makeRecyclerViewVisible() {
+        recyclerView.visibility = View.VISIBLE
+        mProgressBar.visibility = View.GONE
+    }
+
+
+    private fun makeProgressBarVisible() {
+        mProgressBar.visibility = View.VISIBLE
+    }
+
+    override fun onResume() {
+        if (chocolatesViewModel.items.value != null) {
+//            mProgressBar.visibility = View.GONE
         }
-        thread.start()
-        thread.join()
+        super.onResume()
 
-        Log.e("size", totalList.size.toString())
-        adapter.setChocolatesList(totalList)
-        adapter.notifyDataSetChanged()
     }
 
-    private fun deleteItems() {
-        val deletedChoco = DeleteItemsDBAdapter.getAllDeletedChocolates()
-        deletedChoco.forEach {
-            val rez = Tasks.RemoveTask().execute(it.first.toInt()).get()
-            if (rez) {
-                DeleteItemsDBAdapter.deleteItem(it.first, it.second)
-            }
-        }
-    }
-
-    fun tryToConnect() {
-        Thread {
-            while (true) {
-                try {
-                    Thread.sleep(1000000000)
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-                val serverData = Tasks.GetAllTask().execute().get()
-                if (serverData != null) {
-                    syncronizeData(serverData)
-                }
-            }
-        }.start()
-    }
-
-    override fun onSaveInstanceState(outState: Bundle?) {
-        outState?.putString("username", username)
-        outState?.putParcelableArrayList("items", ArrayList(adapter.getChocolatesList()))
-        super.onSaveInstanceState(outState)
-    }
 }

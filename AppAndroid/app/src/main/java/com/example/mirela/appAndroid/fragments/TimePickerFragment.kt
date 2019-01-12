@@ -1,4 +1,4 @@
-package com.example.mirela.appAndroid.utils
+package com.example.mirela.appAndroid.fragments
 
 import android.app.Dialog
 import android.app.TimePickerDialog

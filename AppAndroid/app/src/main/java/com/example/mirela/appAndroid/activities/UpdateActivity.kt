@@ -42,11 +42,11 @@ class UpdateActivity : AppCompatActivity(), DatePickerDialog.OnDateSetListener, 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.add_layout)
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        actionBar?.setDisplayHomeAsUpEnabled(true)
 
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        actionBar?.setDisplayHomeAsUpEnabled(true)
 
         sessionManager = SessionManager(applicationContext)
         sessionManager.checkLogin()

@@ -1,22 +1,37 @@
-package com.example.mirela.appAndroid.bus
+package com.example.mirela.appAndroid.chocolate
 
-import android.arch.persistence.room.Dao
-import android.arch.persistence.room.Insert
-import android.arch.persistence.room.Query
-import com.example.mirela.appAndroid.bus.Chocolate
+import android.arch.lifecycle.LiveData
+import android.arch.persistence.room.*
+
 
 @Dao
 interface ChocolateDAO {
 
-    @get:Query("SELECT * FROM busses")
-    val allBusses: List<Chocolate>
+    @Query("SELECT * FROM chocolates")
+    fun getChocolates(): LiveData<List<Chocolate>>
 
-    @Insert
-    fun insert(chocolate: Chocolate)
+    @Query("SELECT * FROM chocolates")
+    fun getChocolatesTest(): List<Chocolate>
 
-    @Query("SELECT * FROM busses LIMIT:howMany OFFSET:start")
-    fun getBusses(howMany: Int, start: Int): List<Chocolate>
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insert(chocolate: Chocolate): Long
 
-    @Query("UPDATE busses SET added=:added WHERE busses.number=:number")
-    fun updateBus(number: Int?, added: Boolean?)
+    @Delete
+    fun delete(chocolate: Chocolate)
+
+    @Update
+    fun update(chocolate: Chocolate)
+
+    @get:Query("SELECT * FROM chocolates")
+    val allChocolatesTest: List<Chocolate>
+
+    @Query("select * from chocolates where wasInserted = 0")
+    fun getNewInsertedChocolates(): List<Chocolate>
+
+    @Query("select * from chocolates where wasUpdated = 0")
+    fun getUpdatedChocolates(): List<Chocolate>
+
+    @Query("DELETE FROM chocolates where id=:idC AND userId=:userId")
+    fun delete(idC: Int, userId: Int)
+
 }

@@ -7,7 +7,7 @@ import retrofit2.http.DELETE
 import retrofit2.http.PUT
 
 
-interface ChocolateResource {
+interface ChocolateAPI {
 
     @GET("all")
     fun getChocolates(): Call<List<Chocolate>>

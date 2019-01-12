@@ -1,56 +1,44 @@
-package com.example.mirela.appAndroid.POJO
+package com.example.mirela.appAndroid.chocolate
 
+import android.arch.persistence.room.Entity
+import android.arch.persistence.room.PrimaryKey
 import android.os.Parcel
 import android.os.Parcelable
 import java.util.*
 
+@Entity(tableName = "chocolates", primaryKeys = ["id", "userId"])
 class Chocolate(
     var id: Long,
-    var description: String,
-    var date: Date,
+    var body: String,
+    var date: Long,
     var imagePath: String,
-    var lastUpdateDate: Date,
-    var username:String
+    var userId: Int,
+    var wasUpdated: Int,
+    var wasInserted: Int
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
         parcel.readLong(),
         parcel.readString(),
-        Date(parcel.readLong()),
+        parcel.readLong(),
         parcel.readString(),
-        Date(parcel.readLong()),
-        parcel.readString()
-    )
-
+        parcel.readInt(),
+        parcel.readInt(),
+        parcel.readInt()
+    ) {
+    }
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeLong(id)
-        parcel.writeString(description)
-        parcel.writeLong(date.time)
+        parcel.writeString(body)
+        parcel.writeLong(date)
         parcel.writeString(imagePath)
-        parcel.writeLong(lastUpdateDate.time)
-        parcel.writeString(username)
+        parcel.writeInt(userId)
+        parcel.writeInt(wasUpdated)
+        parcel.writeInt(wasInserted)
     }
 
     override fun describeContents(): Int {
         return 0
-    }
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as Chocolate
-
-        if (id != other.id) return false
-        if (username != other.username) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = id.hashCode()
-        result = 31 * result + username.hashCode()
-        return result
     }
 
     companion object CREATOR : Parcelable.Creator<Chocolate> {
@@ -63,6 +51,11 @@ class Chocolate(
         }
     }
 
-
+    override fun equals(other: Any?): Boolean {
+        other?.also {
+            return (other as Chocolate).id == this.id && (other as Chocolate).userId == this.userId
+        }
+        return false
+    }
 }
 
