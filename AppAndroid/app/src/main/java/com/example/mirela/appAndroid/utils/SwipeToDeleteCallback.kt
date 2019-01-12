@@ -1,7 +1,6 @@
 package com.example.mirela.appAndroid.utils
 
 import android.content.Context
-import android.content.Intent
 import android.graphics.*
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
@@ -10,13 +9,21 @@ import android.support.design.widget.Snackbar
 import android.support.v4.content.ContextCompat
 import android.support.v7.widget.RecyclerView
 import android.support.v7.widget.helper.ItemTouchHelper
+import android.widget.Toast
 import com.example.mirela.appAndroid.R
-import com.example.mirela.appAndroid.service.DeleteIntentService
-import java.util.*
+import com.example.mirela.appAndroid.chocolate.Chocolate
+import com.example.mirela.appAndroid.modelviews.ChocolatesViewModel
+import com.example.mirela.appAndroid.syncronize.DeletedItem
+import com.example.mirela.appAndroid.syncronize.DeletedItemsDAO
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 class SwipeToDeleteCallback(
     private val context: Context,
     private val adapter: ChocolateAdapter,
+    private val chocolateViewModel: ChocolatesViewModel,
+    private val deletedItemsDAO: DeletedItemsDAO,
     private val layoutCoordinatorLayout: CoordinatorLayout
 ) : ItemTouchHelper.Callback() {
     private val mClearPaint: Paint = Paint()
@@ -42,30 +49,23 @@ class SwipeToDeleteCallback(
         val position = viewHolder.adapterPosition
         val item = adapter.getChocolatesList()[position]
 
-        val intent = Intent(context, DeleteIntentService::class.java)
-        val sessionManager =SessionManager(context.applicationContext)
-        intent.putExtra("item", item)
-        intent.putExtra("token",sessionManager.userToken)
-        intent.putExtra("userIs",sessionManager.userId)
-
-        context.startService(intent)
-
+        val sessionManager = SessionManager(context.applicationContext)
         adapter.removeItem(item)
+        chocolateViewModel.deleteChocolate(item)
+        chocolateViewModel.items.value= adapter.getChocolatesList()
+
+        deleteFromServer(sessionManager.userToken, sessionManager.userId?.toInt(), item)
 
         val snackbar = Snackbar.make(layoutCoordinatorLayout, "Item was removed", Snackbar.LENGTH_LONG)
         snackbar.setAction("UNDO") {
-            val id = ChocolatesDatabaseAdapter.insertChocolate(
-                item.body,
-                Date(item.date),
-                item.imagePath,
-                Date(item.date),
-                item.userId.toString()
-            )
-            item.id = id
             adapter.insertItem(item)
+            chocolateViewModel.saveChocolate(item)
+            chocolateViewModel.items.value= adapter.getChocolatesList()
+            insertServer(sessionManager.userToken, sessionManager.userId?.toInt(), item)
         }
         snackbar.setActionTextColor(Color.BLUE)
         snackbar.show()
+
 
     }
 
@@ -128,6 +128,37 @@ class SwipeToDeleteCallback(
     ) {
         deleteDrawable?.setBounds(deleteIconLeft, deleteIconTop, deleteIconRight, deleteIconBottom)
         deleteDrawable?.draw(c)
+    }
+
+    private fun deleteFromServer(token: String?, userId: Int?, chocolate: Chocolate) {
+        chocolateViewModel.deleteChocolateServer(chocolate.id.toInt(), userId)
+            .enqueue(object : Callback<Chocolate> {
+                override fun onFailure(call: Call<Chocolate>, t: Throwable) {
+                    Toast.makeText(
+                        context.applicationContext,
+                        "Something went wrong or no connection! Delete from local data",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    deletedItemsDAO.insert(DeletedItem(chocolate.id, userId!!.toInt()))
+                }
+
+                override fun onResponse(call: Call<Chocolate>, response: Response<Chocolate>) {
+                    Toast.makeText(context.applicationContext, "Delete done", Toast.LENGTH_LONG).show()
+                }
+
+            })
+    }
+
+    private fun insertServer(token: String?, userId: Int?, chocolate: Chocolate) {
+        chocolateViewModel.addChocolateServer(chocolate)
+            .enqueue(object : Callback<Chocolate> {
+                override fun onFailure(call: Call<Chocolate>, t: Throwable) {
+                }
+
+                override fun onResponse(call: Call<Chocolate>, response: Response<Chocolate>) {
+                }
+
+            })
     }
 
 }
