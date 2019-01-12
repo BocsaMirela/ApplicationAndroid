@@ -75,7 +75,7 @@ class AddActivity : AppCompatActivity(), DatePickerDialog.OnDateSetListener, Tim
             val userId = sessionManager.userId
 
             val resultIntent = Intent()
-            val chocolate = Chocolate(0, description, date.time, imagePath, userId!!.toInt())
+            val chocolate = Chocolate(0, description, date.time, imagePath, userId!!.toInt(),1,1)
             resultIntent.putExtra("item", chocolate)
             setResult(Activity.RESULT_OK, resultIntent)
             this.finish()
