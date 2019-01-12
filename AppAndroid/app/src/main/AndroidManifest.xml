@@ -31,24 +31,6 @@
                     android:resource="@xml/file_paths"></meta-data>
         </provider>
 
-        <service
-                android:name="com.example.mirela.appAndroid.service.DeleteIntentService"
-                android:exported="false"/>
-
-        <service
-                android:name="com.example.mirela.appAndroid.service.UpdateIntentService"
-                android:exported="false"/>
-
-        <receiver
-                android:name="com.example.mirela.appAndroid.service.MyBroadcastReceiver"
-                android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.SEND"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-                <data android:mimeType="text/plain"/>
-            </intent-filter>
-        </receiver>
-
         <activity
                 android:name="com.example.mirela.appAndroid.activities.LoginActivity"
                 android:excludeFromRecents="true"
@@ -62,7 +44,7 @@
                 android:name="com.example.mirela.appAndroid.activities.AddActivity"
                 android:label="New Chocolate"
                 android:parentActivityName="com.example.mirela.appAndroid.MainActivity"
-                android:theme="@style/AppTheme">
+                android:theme="@style/Theme.AppCompat.Light.NoActionBar">
             <meta-data
                     android:name="android.support.PARENT_ACTIVITY"
                     android:value="com.example.mirela.appAndroid.MainActivity"/>
@@ -71,7 +53,7 @@
                 android:name="com.example.mirela.appAndroid.MainActivity"
                 android:label="Chocolates"
                 android:parentActivityName="com.example.mirela.appAndroid.activities.LoginActivity"
-                android:theme="@style/AppTheme">
+                android:theme="@style/Theme.AppCompat.Light.NoActionBar">
             <meta-data
                     android:name="android.support.PARENT_ACTIVITY"
                     android:value="com.example.mirela.appAndroid.activities.LoginActivity"/>
@@ -80,41 +62,11 @@
                 android:name="com.example.mirela.appAndroid.activities.UpdateActivity"
                 android:label="Update Chocolate"
                 android:parentActivityName="com.example.mirela.appAndroid.MainActivity"
-                android:theme="@style/AppTheme">
+                android:theme="@style/Theme.AppCompat.Light.NoActionBar">
             <meta-data
                     android:name="android.support.PARENT_ACTIVITY"
                     android:value="com.example.mirela.appAndroid.MainActivity"/>
         </activity>
-
-        <provider
-                android:name="com.example.mirela.appAndroid.networking.ChocolateContentProvider"
-                android:authorities="com.example.mirela.appAndroid.networking.ChocolateContentProvider"
-                android:enabled="true"
-                android:syncable="true"
-                android:exported="true"></provider>
-
-        <service android:name="com.example.mirela.appAndroid.networking.AuthenticatorService">
-            <intent-filter>
-                <action android:name="android.accounts.AccountAuthenticator"/>
-            </intent-filter>
-            <meta-data
-                    android:name="android.accounts.AccountAuthenticator"
-                    android:resource="@xml/authentificator"/>
-        </service>
-
-        <service
-                android:name="com.example.mirela.appAndroid.networking.ChocolateSyncService"
-                android:enabled="true"
-                android:exported="true"
-                android:process=":sync">
-            <intent-filter>
-                <action android:name="android.content.SyncAdapter"/>
-            </intent-filter>
-
-            <meta-data
-                    android:name="android.content.SyncAdapter"
-                    android:resource="@xml/synkadapter"/>
-        </service>
 
     </application>
 

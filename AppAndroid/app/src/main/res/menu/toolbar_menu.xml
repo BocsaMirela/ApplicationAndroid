@@ -5,11 +5,10 @@
       android:layout_height="match_parent">
 
     <item
-            android:id="@+id/addMenu"
-            android:title="@string/add"
+            android:id="@+id/logoutMenu"
+            android:title="@string/logout"
             app:showAsAction="withText"
             android:menuCategory="system"
-            android:icon="@drawable/ic_add_black_24dp"
            />
 </menu>
 

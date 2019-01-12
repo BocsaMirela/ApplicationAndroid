@@ -22,6 +22,19 @@ allprojects {
     }
 }
 
+ext {
+    compileSdkVersion = 27
+    minSdkVersion = 15
+    targetSdkVersion = 27
+    supportLibVersion = "27.1.1"
+    constraintLayoutVersion = "1.1.1"
+    lifecycleVersion = "1.1.1"
+    roomVersion = "1.1.0"
+    pagingVersion = "1.0.0"
+    retrofitVersion = "2.4.0"
+    okhttpLoggingInterceptorVersion = "3.10.0"
+}
+
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
