@@ -5,12 +5,13 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.SharedPreferences.Editor
+import com.auth0.android.jwt.JWT
 import com.example.mirela.appAndroid.activities.LoginActivity
 
-class SessionManager(  var _context: Context) {
-     var pref: SharedPreferences
-     var editor: Editor
-     var PRIVATE_MODE = 0
+class SessionManager(var _context: Context) {
+    private var pref: SharedPreferences
+    private var editor: Editor
+    private var PRIVATE_MODE = 0
 
     val userToken: String?
         get() {
@@ -24,26 +25,25 @@ class SessionManager(  var _context: Context) {
 
     // Get Login State
     val isLoggedIn: Boolean
-        get() = pref.getBoolean(IS_LOGIN, false)
+        get() = pref.getBoolean(IS_LOGIN, false) && !JWT(userToken!!).isExpired(10)
 
     init {
         pref = _context.getSharedPreferences(PREF_NAME, PRIVATE_MODE)
         editor = pref.edit()
     }
 
-    fun createLoginSession(name: String,id:Int) {
+    fun createLoginSession(name: String, id: Int) {
         editor.putBoolean(IS_LOGIN, true)
         editor.putString(KEY_NAME_TOKEN, name)
         editor.putString(KEY_NAME_ID, id.toString())
         // commit changes
         editor.commit()
     }
+
     fun checkLogin() {
         // Check login status
         if (!this.isLoggedIn) {
-            // user is not logged in redirect him to Login Activity
             val i = Intent(_context, LoginActivity::class.java)
-            // Closing all the Activities
             i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
             i.flags = Intent.FLAG_ACTIVITY_NEW_TASK
             _context.startActivity(i)

@@ -19,7 +19,7 @@ object Updater {
         Thread {
             while (true) {
                 try {
-                    Thread.sleep(400000)
+                    Thread.sleep(4000)
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
@@ -61,7 +61,7 @@ object Updater {
 
         newInsertedItems.forEach { chocolate ->
             Thread.sleep(100)
-            chocolate.wasInserted=1
+            chocolate.wasInserted = 1
             chocolatesViewModel.addChocolateServer(chocolate).enqueue(object : Callback<Chocolate> {
                 override fun onResponse(call: Call<Chocolate>, response: Response<Chocolate>) {
                     chocolate.wasInserted = 1
@@ -69,7 +69,7 @@ object Updater {
                 }
 
                 override fun onFailure(call: Call<Chocolate>, t: Throwable) {
-                    chocolate.wasInserted=0
+                    chocolate.wasInserted = 0
                 }
 
             })
@@ -77,7 +77,7 @@ object Updater {
 
         newUpdatedItems.forEach { chocolate ->
             Thread.sleep(100)
-            chocolate.wasUpdated=1
+            chocolate.wasUpdated = 1
             chocolatesViewModel.updateChocolateServer(chocolate, userId).enqueue(object : Callback<Chocolate> {
                 override fun onResponse(call: Call<Chocolate>, response: Response<Chocolate>) {
                     chocolate.wasUpdated = 1
@@ -85,7 +85,7 @@ object Updater {
                 }
 
                 override fun onFailure(call: Call<Chocolate>, t: Throwable) {
-                    chocolate.wasUpdated=0
+                    chocolate.wasUpdated = 0
                 }
 
             })
@@ -97,9 +97,7 @@ object Updater {
                 .enqueue((object : Callback<Chocolate> {
                     override fun onResponse(call: Call<Chocolate>, response: Response<Chocolate>) {
                         val choco = response.body()
-                        choco?.also {
-                            deletedItemsDAO.delete(DeletedItem(choco.id, choco.userId))
-                        }
+                        deletedItemsDAO.delete(DeletedItem(item.id, item.userId))
                     }
 
                     override fun onFailure(call: Call<Chocolate>, t: Throwable) {

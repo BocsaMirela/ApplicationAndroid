@@ -143,7 +143,7 @@ class SwipeToDeleteCallback(
                 }
 
                 override fun onResponse(call: Call<Chocolate>, response: Response<Chocolate>) {
-                    Toast.makeText(context.applicationContext, "Delete done", Toast.LENGTH_LONG).show()
+//                    Toast.makeText(context.applicationContext, "Delete done", Toast.LENGTH_LONG).show()
                 }
 
             })

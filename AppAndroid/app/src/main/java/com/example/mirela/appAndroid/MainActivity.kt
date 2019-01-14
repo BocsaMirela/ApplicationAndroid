@@ -202,8 +202,9 @@ class MainActivity : AppCompatActivity(), OnClickInterface {
                             lastID = chocolates.sortedBy { chocolate -> chocolate.id }.last().id.toInt() + 1
                             makeRecyclerViewVisible()
 
-                            chocolatesViewModel.items.value = chocolates
                             Updater.syncronizeDataLocal(chocolatesViewModel, chocolates)
+                            chocolatesViewModel.items.value = chocolates
+
                         }
                     }
 
@@ -222,6 +223,8 @@ class MainActivity : AppCompatActivity(), OnClickInterface {
                     makeRecyclerViewVisible()
                     adapter.setChocolatesList(items)
                     adapter.notifyDataSetChanged()
+                    lastID = items.sortedBy { chocolate -> chocolate.id }.last().id.toInt() + 1
+
                 }
                 Updater.tryToConnect(chocolatesViewModel, deletedItemsDAO, applicationContext)
             }
